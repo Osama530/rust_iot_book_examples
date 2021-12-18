@@ -1,50 +1,64 @@
-use iron::prelude::*;
-use iron::{error::IronError,status, Url};
-use iron::modifiers::Redirect;
+extern crate iron;
+extern crate router;
+extern crate logger;
+extern crate chrono;
+extern crate env_logger;
+// extern crate rustc_serialize;
+extern crate serde;
+extern crate uuid;
+extern  crate serde_json;
 
-use params::{Params, Value, Map};
+mod models;
+mod handlers;
+mod database;
 
-const COMMENT_FIELD: &str = "My Comment"; //Example 2
+use models::*;
+use handlers::*;
+use database::Database;
 
-fn add_server(req: &mut Request) -> IronResult<Response> {
-    
-    let map = req.get_ref::<Params>().unwrap();
-    Ok(Response::with((status::Ok, get_comment(&map, "coool"))))
+use iron::Iron;
+use iron::prelude::Chain;
+use router::Router;
+use logger::Logger;
+use uuid::Uuid;
+
+fn main(){
+    env_logger::init();
+    let (logger_befor, logger_after) = Logger::new(None);
+
+    let mut db = Database::new();
+
+    let p = Post::new (
+        "the first post",
+        "first post in our API",
+        "Osama",
+        chrono::offset::Utc::now(),
+        Uuid::new_v4()
+    );
+    db.add_post(p);
+
+    let p2 = Post::new (
+        "the second post",
+        "second post in our API",
+        "Osama",
+        chrono::offset::Utc::now(),
+        Uuid::new_v4()
+    );
+    db.add_post(p2);
+
+    let handlers = Handlers::new(db);
+    let json_content_middleware = JsonAfterMiddleware;
+
+    let mut router = Router::new();
+    router.get("/post_feed", handlers.postfeed, "post_feed");
+    router.post("/post", handlers.post_post, "post_post");
+    router.get("/post/:id", handlers.post, "post");
+
+    let mut chain = Chain::new(router);
+    chain.link_before(logger_befor);
+    chain.link_after(json_content_middleware);
+    chain.link_after(logger_after);
+
+
+    Iron::new(chain).http("localhost:8000").unwrap();
 }
-
-fn main() {
-    // Iron::new(qurie_handler) //example 1
-    Iron::new(add_server)
-        .http("localhost:3000").unwrap();
-}
-
-// Parsing parameters examaple 2a
-fn get_comment(map: &Map, set_value: &str)-> String {
-    let x: &str = match map.find(&[COMMENT_FIELD]).unwrap() {
-        Value::String(set_value) => set_value, //sets the value as string(or can be anything) for the key found(COMMENT_FIELD)
-        // i.e: http://localhost:3000/?My Comment=coool //return ok with response coool
-        _ => "none",
-    };
-    String::from(x)
-
-}
-
-// Parsing parameters example 1
-fn qurie_handler(req: &mut Request)-> IronResult<Response> {
-    
-    let maping_data = req.get_ref::<Params>().unwrap();
-
-    match maping_data.find(&["user"]) {
-        Some(&Value::String(ref name)) if name == "Osama" => {
-            Ok(Response::with((status::Ok, "Welcome back, Osama!")))
-        },
-        _ => Ok(Response::with(iron::status::NotFound)),
-        
-    }
-
-}
-
-// let url = Url::parse("http://osama_iot.com").unwrap();
-// Iron::new( move |_: &mut Request|
-//     Ok(Response::with((status::NoContent,Redirect(url.clone())))))
-//     .http("localhost:3000");
