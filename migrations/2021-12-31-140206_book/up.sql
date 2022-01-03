@@ -1,0 +1,6 @@
+CREATE TABLE book (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR NOT NULL,
+    auther  VARCHAR NOT NULL,
+    published BOOLEAN NOT NULL DEFAULT 'f'
+)
