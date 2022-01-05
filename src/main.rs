@@ -1,35 +1,31 @@
 #[macro_use] extern crate diesel;
-
-use diesel::{PgConnection, Connection};
 use dotenv::dotenv;
 use std::env;
 
-pub mod schema;
-pub mod models;
+use diesel::prelude::*;
+use diesel::PgConnection;
 
+mod models;
+mod schema;
+mod lib;
 
-fn main() {
+use models::NewPost;
+use lib::*;
+
+fn main(){
+    let connection = establish_connection();
+
+    let title = lib::get_input("title: ".to_string());
+    let body = lib::get_input("body: ".to_string());
+
+    NewPost::create_post(&connection, title, body);
+
+}
+
+fn establish_connection()->PgConnection {
     dotenv().ok();
-
-    let database = env::var("DATABASE_URL").expect("DATABASE_URL");
-    let conn = PgConnection::establish(&database).unwrap();
-
-    let book = models::NewBook { 
-        title: "A_iot".to_string(),
-        auther: "osama".to_string(),
-        published: true,
-    };
-
-    if models::Book::insert(book, &conn) {
-        println!("success");
-    } else {
-        println!("failed");
-    }
-
-    let books = models::Book::all(&conn);
-    println!("{:?}",books);
-
-
-    
-
+    let database_url = dotenv::var("DATABASE_URL")
+        .expect("DATABASE URL must be set");
+    PgConnection::establish(&database_url)
+        .expect("error establishing connection")
 }

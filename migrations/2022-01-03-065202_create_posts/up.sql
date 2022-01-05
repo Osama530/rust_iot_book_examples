@@ -1,6 +1,6 @@
-CREATE TABLE book (
+CREATE TABLE posts (
     id SERIAL PRIMARY KEY,
     title VARCHAR NOT NULL,
-    auther  VARCHAR NOT NULL,
+    body TEXT NOT NULL,
     published BOOLEAN NOT NULL DEFAULT 'f'
 )
