@@ -1,8 +1,8 @@
 table! {
-    posts (id) {
-        id -> Int4,
-        title -> Varchar,
-        body -> Text,
+    movies (movie_id) {
+        movie_id -> Int4,
+        movie_name -> Varchar,
+        movie_gener -> Varchar,
         published -> Bool,
     }
 }

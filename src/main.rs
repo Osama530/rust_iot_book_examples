@@ -1,31 +1,36 @@
 #[macro_use] extern crate diesel;
-use dotenv::dotenv;
+// use dotenv::dotenv;
+use model::Movie;
 use std::env;
 
 use diesel::prelude::*;
 use diesel::PgConnection;
 
-mod models;
 mod schema;
-mod lib;
+mod model;
 
-use models::NewPost;
-use lib::*;
+use model::NewMovie;
 
 fn main(){
-    let connection = establish_connection();
 
-    let title = lib::get_input("title: ".to_string());
-    let body = lib::get_input("body: ".to_string());
+    let database_url = env::var("DATABASE_URL")
+        .expect("database url must be provided");
 
-    NewPost::create_post(&connection, title, body);
+    let conn = PgConnection::establish(&database_url)
+        .expect("error establishing connection to database");
 
-}
+        let movie_01 = NewMovie {
+            movie_name: "spider man".to_string(),
+            movie_gener: "Action, SciFi".to_string(),
+            // idb_rating: 7.2,
+            published: true,
+        };
 
-fn establish_connection()->PgConnection {
-    dotenv().ok();
-    let database_url = dotenv::var("DATABASE_URL")
-        .expect("DATABASE URL must be set");
-    PgConnection::establish(&database_url)
-        .expect("error establishing connection")
+        if Movie::insert(movie_01, &conn) {
+            println!("success inserting");
+        }
+        else {
+            println!("error inserting to database");
+        }
+
 }
